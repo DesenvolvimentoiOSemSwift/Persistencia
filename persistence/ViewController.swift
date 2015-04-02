@@ -13,7 +13,7 @@ import CloudKit
 class ViewController: UIViewController {
 
     // MARK: - Properties
-    var dataSource: NSMutableArray! = NSMutableArray.array()
+    var dataSource = NSMutableArray()
     
     // MARK: - Outlets
     @IBOutlet weak var tableView: UITableView!
@@ -31,7 +31,7 @@ class ViewController: UIViewController {
     func execUserDefaults () {
         
         // Get array from user defaults
-        var defaultsArray: NSMutableArray! = NSMutableArray.array()
+        var defaultsArray = NSMutableArray()
         if (NSUserDefaults.standardUserDefaults().arrayForKey("defaultsArray") != nil) {
             defaultsArray.addObjectsFromArray(NSUserDefaults.standardUserDefaults().arrayForKey("defaultsArray")!)
         }
@@ -111,7 +111,7 @@ class ViewController: UIViewController {
         apple.setObject("Apple", forKey: "name")
         
         // Save company
-        publicDatabase.saveRecord(apple, completionHandler: { (savedCompany, errCompany) -> Void in
+        publicDatabase.saveRecord(apple) { savedCompany, errCompany in
             
             // Create a product
             var iPod = CKRecord(recordType: "Product")
@@ -120,11 +120,13 @@ class ViewController: UIViewController {
             iPod.setObject(CKReference(record: apple, action: CKReferenceAction.None), forKey: "company")
             
             // Save product
-            publicDatabase.saveRecord(iPod, completionHandler: { (savedProduct, errProduct) -> Void in
+            publicDatabase.saveRecord(iPod) { savedProduct, errProduct in
                 
                 // Query
-                var query = CKQuery(recordType: "Product", predicate: NSPredicate(format: "TRUEPREDICATE"))
-                publicDatabase.performQuery(query, inZoneWithID: nil, completionHandler: { (fetchedObjects, errQuery) -> Void in
+                let predicate = NSPredicate(value: true)
+                var query = CKQuery(recordType: "Product", predicate: predicate)
+                publicDatabase.performQuery(query, inZoneWithID: nil) { fetchedObjects, errQuery in
+                    
                     for product in fetchedObjects {
                         let productName = product.objectForKey("name") as String
                         self.dataSource.insertObject("Cloud: \(productName)", atIndex: 0)
@@ -134,11 +136,9 @@ class ViewController: UIViewController {
                     dispatch_async(dispatch_get_main_queue(), { () -> Void in
                         self.tableView.reloadData()
                     })
-                })
-                
-            })
-            
-        })
+                }
+            }
+        }
     }
     
     // MARK: - TableView Delegate
