@@ -31,7 +31,7 @@ class ViewController: UIViewController {
     func execUserDefaults () {
         
         // Get array from user defaults
-        var defaultsArray = NSMutableArray()
+        let defaultsArray = NSMutableArray()
         if (NSUserDefaults.standardUserDefaults().arrayForKey("defaultsArray") != nil) {
             defaultsArray.addObjectsFromArray(NSUserDefaults.standardUserDefaults().arrayForKey("defaultsArray")!)
         }
@@ -54,46 +54,62 @@ class ViewController: UIViewController {
     func execCoreData () {
         
         // Get Core Data Context
-        let appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let managedObjectContext: NSManagedObjectContext! = appDelegate.managedObjectContext
         
         // Create the error pointer
-        var err: NSErrorPointer = nil
+        let err: NSErrorPointer = nil
         
         // Add Company
-        var apple: Company = NSEntityDescription.insertNewObjectForEntityForName("Company", inManagedObjectContext: managedObjectContext) as Company
+        let apple: Company = NSEntityDescription.insertNewObjectForEntityForName("Company", inManagedObjectContext: managedObjectContext) as! Company
         apple.name = "Apple"
         
         // Add Products
-        var iPad: Product = NSEntityDescription.insertNewObjectForEntityForName("Product", inManagedObjectContext: managedObjectContext) as Product
+        let iPad: Product = NSEntityDescription.insertNewObjectForEntityForName("Product", inManagedObjectContext: managedObjectContext) as! Product
         iPad.name = "iPad"
         iPad.price = 299
         iPad.company = apple
         
-        var iPhone: Product = NSEntityDescription.insertNewObjectForEntityForName("Product", inManagedObjectContext: managedObjectContext) as Product
+        let iPhone: Product = NSEntityDescription.insertNewObjectForEntityForName("Product", inManagedObjectContext: managedObjectContext) as! Product
         iPhone.name = "iPhone"
         iPhone.price = 199
         iPhone.company = apple
         
-        // Save Context
-        managedObjectContext.save(err)
+        do {
+            // Save Context
+            try managedObjectContext.save()
+        } catch let error as NSError {
+            err.memory = error
+        }
         
         // Create the fetch request
         var fetchRequest = NSFetchRequest(entityName: "Company")
         
         // Fetch Companies
-        var companies: NSArray! = managedObjectContext.executeFetchRequest(fetchRequest, error: err)
+        var companies: NSArray!
+        do {
+            companies = try managedObjectContext.executeFetchRequest(fetchRequest)
+        } catch let error as NSError {
+            err.memory = error
+            companies = nil
+        }
         for index in 0...companies.count-1 {
-            let company = companies[index] as Company
+            let company = companies[index] as! Company
             self.dataSource.addObject("Company: \(company.name)")
         }
         
         // Fetch Products
         fetchRequest = NSFetchRequest(entityName: "Product")
-        var products: NSArray! = managedObjectContext.executeFetchRequest(fetchRequest, error: err)
+        var products: NSArray!
+        do {
+            products = try managedObjectContext.executeFetchRequest(fetchRequest)
+        } catch let error as NSError {
+            err.memory = error
+            products = nil
+        }
         for index in 0...products.count-1 {
-            let product = products[index] as Product
-            var company = product.company as Company
+            let product = products[index] as! Product
+            let company = product.company as! Company
             self.dataSource.addObject("Product: \(company.name) - \(product.name)")
         }
     }
@@ -107,14 +123,14 @@ class ViewController: UIViewController {
         let publicDatabase = defaultContainer.publicCloudDatabase
         
         // Create a company
-        var apple: CKRecord = CKRecord(recordType: "Company")
+        let apple: CKRecord = CKRecord(recordType: "Company")
         apple.setObject("Apple", forKey: "name")
         
         // Save company
         publicDatabase.saveRecord(apple) { savedCompany, errCompany in
             
             // Create a product
-            var iPod = CKRecord(recordType: "Product")
+            let iPod = CKRecord(recordType: "Product")
             iPod.setObject("iPod", forKey: "name")
             iPod.setObject(199, forKey: "price")
             iPod.setObject(CKReference(record: apple, action: CKReferenceAction.None), forKey: "company")
@@ -124,11 +140,11 @@ class ViewController: UIViewController {
                 
                 // Query
                 let predicate = NSPredicate(value: true)
-                var query = CKQuery(recordType: "Product", predicate: predicate)
+                let query = CKQuery(recordType: "Product", predicate: predicate)
                 publicDatabase.performQuery(query, inZoneWithID: nil) { fetchedObjects, errQuery in
                     
-                    for product in fetchedObjects {
-                        let productName = product.objectForKey("name") as String
+                    for product in fetchedObjects! {
+                        let productName = product.objectForKey("name") as! String
                         self.dataSource.insertObject("Cloud: \(productName)", atIndex: 0)
                     }
                     
@@ -148,9 +164,9 @@ class ViewController: UIViewController {
     
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as UITableViewCell
+        let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
         
-        var text = cell.viewWithTag(10) as UILabel
+        let text = cell.viewWithTag(10) as! UILabel
         text.text = "\(self.dataSource[indexPath.row])"
         
         return cell
